@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+import json
+import os
+from typing import Any
+
+from openai import OpenAI
+
+from skillreducer.config import Config
+
+
+class LLMClient:
+    def __init__(self, config: Config) -> None:
+        api_key = (
+            config.api_key
+            or os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("SKILLREDUCER_API_KEY")
+        )
+        if not api_key:
+            self._client = None
+            self._enabled = False
+        else:
+            kwargs: dict[str, Any] = {"api_key": api_key}
+            if config.base_url:
+                kwargs["base_url"] = config.base_url
+            self._client = OpenAI(**kwargs)
+            self._enabled = config.use_llm
+        self._config = config
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self._client and self._enabled)
+
+    def complete(self, prompt: str, model: str | None = None, system: str | None = None) -> str:
+        if not self.enabled:
+            raise RuntimeError(
+                "LLM client is not configured. Set OPENAI_API_KEY or config.yaml api_key."
+            )
+        messages: list[dict[str, str]] = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        response = self._client.chat.completions.create(
+            model=model or self._config.compression_model,
+            messages=messages,
+            temperature=0,
+        )
+        return (response.choices[0].message.content or "").strip()
+
+    def complete_json(self, prompt: str, model: str | None = None, system: str | None = None) -> Any:
+        text = self.complete(prompt, model=model, system=system)
+        text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        return json.loads(text)

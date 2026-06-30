@@ -1,0 +1,19 @@
+models:
+  compression: gpt-4o-mini
+  routing_oracle: gpt-4o-mini
+  evaluation: gpt-4o-mini
+
+thresholds:
+  short_description_tokens: 40
+  min_reference_tokens: 30
+  max_feedback_iterations: 2
+  max_restore_steps: 3
+
+oracle:
+  num_test_queries: 8
+  num_distractors: 4
+  include_adversarial: true
+
+# api_key: sk-...
+# base_url: https://api.openai.com/v1
+use_llm: true
