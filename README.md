@@ -17,6 +17,25 @@ Every token in a skill description and body competes for context window space. S
 
 ## Install
 
+### Binary (recommended)
+
+Download the latest `skillreducer` / `skillreducer.exe` from [GitHub Releases](https://github.com/zealgoswami-lab/skillreducer/releases), or build locally:
+
+```bash
+pip install -e ".[build]"
+python build_binary.py
+# Output: dist/skillreducer  (or dist/skillreducer.exe on Windows)
+```
+
+Then run directly — no Python required on the target machine:
+
+```bash
+./dist/skillreducer audit path/to/my-skill
+./dist/skillreducer agent path/to/my-skill
+```
+
+### From source
+
 ```bash
 pip install -e .
 ```
@@ -28,6 +47,17 @@ pip install -e ".[dev]"
 ```
 
 ## Quick start
+
+Sample skills are in [`data/`](data/) — run SkillReducer against them immediately:
+
+```bash
+skillreducer audit data --recursive
+skillreducer reduce data/pdf-processing --no-llm
+skillreducer agent data/marketing-strategy --output optimized/
+skillreducer agent data --recursive
+```
+
+See [data/README.md](data/README.md) for what each sample skill demonstrates.
 
 Audit a skill:
 

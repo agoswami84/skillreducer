@@ -36,6 +36,7 @@ def test_skill_optimization_result_paths(tmp_path: Path) -> None:
     assert examples in result.all_files
 
 
+@patch("skillreducer.agent.Stage1RoutingAgent")
 @patch("skillreducer.agent.create_skill_reducer_agent")
 @patch("skillreducer.agent.create_completion_agent")
 @patch("skillreducer.agent.reduce_skill")
@@ -43,6 +44,7 @@ def test_skill_reducer_agent_optimize_dry_run(
     mock_reduce,
     mock_completion,
     mock_orchestrator,
+    mock_stage1_cls,
     mock_agno_agent,
     tmp_path: Path,
 ) -> None:
@@ -55,6 +57,12 @@ def test_skill_reducer_agent_optimize_dry_run(
 
     mock_orchestrator.return_value = mock_agno_agent
     mock_completion.return_value = mock_agno_agent
+    mock_stage1_cls.return_value.run.return_value = MagicMock(
+        description="compressed skill",
+        notes=["Stage 1: test"],
+        generated=False,
+        compressed=True,
+    )
 
     from skillreducer.models import ReduceReport, TokenStats
 

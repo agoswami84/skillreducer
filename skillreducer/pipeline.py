@@ -10,7 +10,7 @@ from skillreducer.llm.client import LLMClient
 from skillreducer.models import ReduceReport, TokenStats
 from skillreducer.parser import parse_skill_md, write_skill_md
 from skillreducer.stage1.compress import compress_description
-from skillreducer.stage1.generate import generate_description
+from skillreducer.stage1.agent import Stage1RoutingAgent
 from skillreducer.stage2.disclose import (
     deduplicate_existing_references,
     restructure_body,
@@ -26,6 +26,7 @@ def reduce_skill(
     stage: int | None = None,
     dry_run: bool = False,
     llm: Any | None = None,
+    stage1_agent: Stage1RoutingAgent | None = None,
 ) -> ReduceReport:
     config = config or Config.load()
 
@@ -42,16 +43,23 @@ def reduce_skill(
     run_stage2 = stage in (None, 2)
 
     if run_stage1:
-        if not description.strip() or count_tokens(description) <= config.short_description_tokens:
-            description = generate_description(skill, llm_client if llm_client.enabled else None)
-            notes.append("Stage 1: generated description from body")
-        if description.strip():
-            description, stage1_notes = compress_description(
-                description,
-                llm_client if llm_client.enabled else None,
-                max_restore_steps=config.max_restore_steps,
-            )
-            notes.extend(stage1_notes)
+        if stage1_agent is not None:
+            stage1_result = stage1_agent.run(skill)
+            description = stage1_result.description
+            notes.extend(stage1_result.notes)
+        else:
+            from skillreducer.stage1.generate import generate_description
+
+            if not description.strip() or count_tokens(description) <= config.short_description_tokens:
+                description = generate_description(skill, llm_client if llm_client.enabled else None)
+                notes.append("Stage 1: generated description from body")
+            if description.strip():
+                description, stage1_notes = compress_description(
+                    description,
+                    llm_client if llm_client.enabled else None,
+                    max_restore_steps=config.max_restore_steps,
+                )
+                notes.extend(stage1_notes)
 
     if run_stage2 and body.strip():
         body, generated_refs, stage2_notes = restructure_body(
