@@ -87,8 +87,8 @@ print(result.reference_files)    # examples.md, templates.md, etc.
 print(result.agent_summary)      # token savings summary
 ```
 
-- [`model.py`](src/skillreducer/model.py) — Agno `OpenAIChat` client factory from config
-- [`agent.py`](src/skillreducer/agent.py) — `SkillReducerAgent` orchestrator + `AgnoLLMClient` for pipeline LLM steps
+- [`model.py`](skillreducer/model.py) — Agno `OpenAIChat` client factory from config
+- [`agent.py`](skillreducer/agent.py) — `SkillReducerAgent` orchestrator + `AgnoLLMClient` for pipeline LLM steps
 
 Requires `OPENAI_API_KEY` (or `api_key` in `config.yaml`).
 
