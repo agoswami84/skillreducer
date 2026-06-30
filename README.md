@@ -63,6 +63,35 @@ skillreducer reduce path/to/skill
 
 Use `--no-llm` to force heuristic-only mode.
 
+## Agno agent (recommended)
+
+The Agno-powered agent accepts a **skill folder** and returns **optimized skill files**:
+
+```bash
+skillreducer agent path/to/my-skill
+skillreducer agent path/to/my-skill --output ./optimized
+skillreducer agent ./skills --recursive
+```
+
+Python API:
+
+```python
+from pathlib import Path
+from skillreducer.agent import SkillReducerAgent
+
+agent = SkillReducerAgent()
+result = agent.optimize(Path("path/to/my-skill"), output_dir=Path("optimized"))
+
+print(result.skill_md)           # optimized SKILL.md path
+print(result.reference_files)    # examples.md, templates.md, etc.
+print(result.agent_summary)      # token savings summary
+```
+
+- [`model.py`](src/skillreducer/model.py) — Agno `OpenAIChat` client factory from config
+- [`agent.py`](src/skillreducer/agent.py) — `SkillReducerAgent` orchestrator + `AgnoLLMClient` for pipeline LLM steps
+
+Requires `OPENAI_API_KEY` (or `api_key` in `config.yaml`).
+
 ## Standard skill layout
 
 ```
@@ -81,7 +110,8 @@ After optimization, reference files include routing metadata (`when`, `topics`) 
 | Command | Description |
 |---------|-------------|
 | `skillreducer audit <path>` | Token report + F1/F2/F3 issue flags |
-| `skillreducer reduce <path>` | Run Stage 1 + Stage 2 optimization |
+| `skillreducer reduce <path>` | Run Stage 1 + Stage 2 optimization (OpenAI client) |
+| `skillreducer agent <path>` | Same pipeline via Agno agent (skill folder → updated files) |
 | `--stage 1` / `--stage 2` | Run a single stage |
 | `--recursive` | Process all skills under a directory |
 | `--dry-run` | Report savings without writing files |

@@ -10,8 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "zealgoswami-lab" }]
-keywords = ["llm", "skills", "agents", "skillreducer", "prompt-compression", "skillhub", "claude-code"]
+keywords = ["llm", "skills", "agents", "agno", "skillreducer", "prompt-compression", "skillhub", "claude-code"]
 dependencies = [
+    "agno>=2.5",
     "click>=8.1",
     "pyyaml>=6.0",
     "tiktoken>=0.7",

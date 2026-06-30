@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from skillreducer import __version__
+from skillreducer.agent import SkillReducerAgent
 from skillreducer.audit import audit_skill
 from skillreducer.config import Config
 from skillreducer.parser import find_skill_paths
@@ -70,6 +71,44 @@ def reduce_cmd(
             dry_run=dry_run,
         )
         print_reduce_report(report)
+
+
+@main.command("agent")
+@click.argument("path", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", "-o", type=click.Path(path_type=Path), default=Path("optimized"))
+@click.option("--recursive", "-r", is_flag=True, help="Optimize all skills under PATH")
+@click.option("--stage", type=click.Choice(["1", "2"]), default=None, help="Run a single stage")
+@click.option("--dry-run", is_flag=True, help="Compute report without writing files")
+@click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), default=None)
+def agent_cmd(
+    path: Path,
+    output: Path,
+    recursive: bool,
+    stage: str | None,
+    dry_run: bool,
+    config_path: Path | None,
+) -> None:
+    """Optimize skills using the Agno agent (skill folder in, updated files out)."""
+    config = Config.load(config_path)
+    agent = SkillReducerAgent(config)
+    stage_num = int(stage) if stage else None
+
+    skill_paths = find_skill_paths(path, recursive=recursive)
+    if not skill_paths:
+        raise click.ClickException(f"No skill files (SKILL.md) found under {path}")
+
+    for skill_path in skill_paths:
+        result = agent.optimize(
+            skill_path,
+            output_dir=output,
+            stage=stage_num,
+            dry_run=dry_run,
+        )
+        if result.report:
+            print_reduce_report(result.report)
+        click.echo(result.agent_summary)
+        if not dry_run:
+            click.echo(f"Wrote: {result.output_dir}")
 
 
 if __name__ == "__main__":

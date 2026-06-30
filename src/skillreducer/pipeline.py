@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from typing import Any
 
 from skillreducer.audit import audit_skill
 from skillreducer.config import Config
@@ -24,11 +25,12 @@ def reduce_skill(
     config: Config | None = None,
     stage: int | None = None,
     dry_run: bool = False,
+    llm: Any | None = None,
 ) -> ReduceReport:
     config = config or Config.load()
 
     skill = parse_skill_md(path)
-    llm = LLMClient(config)
+    llm_client = llm if llm is not None else LLMClient(config)
     original = audit_skill(path, config)
     notes: list[str] = []
 
@@ -41,12 +43,12 @@ def reduce_skill(
 
     if run_stage1:
         if not description.strip() or count_tokens(description) <= config.short_description_tokens:
-            description = generate_description(skill, llm if llm.enabled else None)
+            description = generate_description(skill, llm_client if llm_client.enabled else None)
             notes.append("Stage 1: generated description from body")
         if description.strip():
             description, stage1_notes = compress_description(
                 description,
-                llm if llm.enabled else None,
+                llm_client if llm_client.enabled else None,
                 max_restore_steps=config.max_restore_steps,
             )
             notes.extend(stage1_notes)
@@ -54,7 +56,7 @@ def reduce_skill(
     if run_stage2 and body.strip():
         body, generated_refs, stage2_notes = restructure_body(
             body,
-            llm if llm.enabled else None,
+            llm_client if llm_client.enabled else None,
             min_reference_tokens=config.min_reference_tokens,
         )
         notes.extend(stage2_notes)
@@ -90,7 +92,7 @@ def reduce_skill(
 
         for filename, content in new_references.items():
             ref_path = out_skill_dir / filename
-            write_reference_file(ref_path, content, llm if llm.enabled else None)
+            write_reference_file(ref_path, content, llm_client if llm_client.enabled else None)
             files_written.append(filename)
 
     optimized_stats = TokenStats(
