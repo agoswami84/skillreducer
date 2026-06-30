@@ -4,14 +4,12 @@ from pathlib import Path
 
 from skillreducer.config import Config
 from skillreducer.models import AuditIssue, AuditReport, Skill, TokenStats
-from skillreducer.parser import is_protected_skill_path, parse_skill_md
+from skillreducer.parser import parse_skill_md
 from skillreducer.tokenizer import count_tokens
 
 
 def audit_skill(path: Path, config: Config | None = None) -> AuditReport:
     config = config or Config.load()
-    if is_protected_skill_path(path):
-        raise ValueError("Refusing to audit protected built-in skills under skills-cursor")
 
     skill = parse_skill_md(path)
     stats = _token_stats(skill)

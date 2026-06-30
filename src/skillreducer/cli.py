@@ -15,7 +15,7 @@ from skillreducer.report import print_audit_report, print_reduce_report
 @click.group()
 @click.version_option(__version__, prog_name="skillreducer")
 def main() -> None:
-    """Optimize Cursor Agent Skills for token efficiency."""
+    """Implementation of SkillReducer (Gao et al., arXiv:2603.29919) for LLM agent skills."""
 
 
 @main.command("audit")
@@ -27,7 +27,7 @@ def audit_cmd(path: Path, recursive: bool, config_path: Path | None) -> None:
     config = Config.load(config_path)
     skill_paths = find_skill_paths(path, recursive=recursive)
     if not skill_paths:
-        raise click.ClickException(f"No SKILL.md found under {path}")
+        raise click.ClickException(f"No skill files (SKILL.md) found under {path}")
 
     for skill_path in skill_paths:
         report = audit_skill(skill_path, config)
@@ -58,7 +58,7 @@ def reduce_cmd(
 
     skill_paths = find_skill_paths(path, recursive=recursive)
     if not skill_paths:
-        raise click.ClickException(f"No SKILL.md found under {path}")
+        raise click.ClickException(f"No skill files (SKILL.md) found under {path}")
 
     stage_num = int(stage) if stage else None
     for skill_path in skill_paths:

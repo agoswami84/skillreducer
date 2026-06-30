@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 GENERATE_DESCRIPTION = """\
-Extract a Cursor skill routing description from the body below.
+Extract an agent skill routing description from the body below.
 Return JSON with keys: capability, trigger, identifiers.
 Each value should be 20-40 tokens worth of concise third-person text.
 Combine into one description string in field "description".

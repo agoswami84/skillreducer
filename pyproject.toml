@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "skillreducer"
 version = "0.1.0"
-description = "Optimize Cursor Agent Skills for token efficiency (SkillReducer framework)"
+description = "Implementation of the SkillReducer framework (Gao et al., arXiv:2603.29919) for LLM agent skill optimization"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "zealgoswami-lab" }]
-keywords = ["cursor", "llm", "skills", "prompt-compression", "agents"]
+keywords = ["llm", "skills", "agents", "skillreducer", "prompt-compression", "skillhub", "claude-code"]
 dependencies = [
     "click>=8.1",
     "pyyaml>=6.0",

@@ -7,7 +7,7 @@ from skillreducer.audit import audit_skill
 from skillreducer.config import Config
 from skillreducer.llm.client import LLMClient
 from skillreducer.models import ReduceReport, TokenStats
-from skillreducer.parser import is_protected_skill_path, parse_skill_md, write_skill_md
+from skillreducer.parser import parse_skill_md, write_skill_md
 from skillreducer.stage1.compress import compress_description
 from skillreducer.stage1.generate import generate_description
 from skillreducer.stage2.disclose import (
@@ -26,8 +26,6 @@ def reduce_skill(
     dry_run: bool = False,
 ) -> ReduceReport:
     config = config or Config.load()
-    if is_protected_skill_path(path):
-        raise ValueError("Refusing to optimize protected built-in skills under skills-cursor")
 
     skill = parse_skill_md(path)
     llm = LLMClient(config)

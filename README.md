@@ -1,6 +1,14 @@
 # skillreducer
 
-Optimize [Cursor Agent Skills](https://cursor.com/docs) for token efficiency using the **SkillReducer** framework from [arXiv:2603.29919](https://arxiv.org/abs/2603.29919).
+Open-source tool implementing the **SkillReducer** debloating framework for LLM agent skills, based on the research paper:
+
+> **SkillReducer: Optimizing LLM Agent Skills for Token Efficiency**  
+> Yudong Gao, Zongjie Li, Yuanyuan Yuan, Zimo Ji, Pingchuan Ma, Shuai Wang  
+> [arXiv:2603.29919](https://arxiv.org/abs/2603.29919) · [PDF](skill_reducer.pdf) · [Detailed explanation](PAPER_DETAIL.md)
+
+This repository implements the paper's two-stage pipeline (routing compression + progressive disclosure). The algorithm design, empirical study, and evaluation are from the original authors; see [CITATION.md](CITATION.md) for how to cite the paper.
+
+Works with **any agent platform** that uses the standard `SKILL.md` + YAML frontmatter convention (Claude Code, Windsurf, OpenCode, SkillHub, GitHub community skills, and similar).
 
 Every token in a skill description and body competes for context window space. SkillReducer debloats skills in two stages:
 
@@ -34,11 +42,12 @@ skillreducer reduce path/to/my-skill
 skillreducer reduce path/to/my-skill --output ./optimized --dry-run
 ```
 
-Batch mode:
+Batch mode across a skill library:
 
 ```bash
-skillreducer audit ~/.cursor/skills --recursive
-skillreducer reduce .cursor/skills --recursive
+skillreducer audit ./skills --recursive
+skillreducer reduce ~/.claude/skills --recursive
+skillreducer reduce ./my-skill-library --recursive
 ```
 
 ## Configuration
@@ -54,16 +63,18 @@ skillreducer reduce path/to/skill
 
 Use `--no-llm` to force heuristic-only mode.
 
-## Cursor skill layout
+## Standard skill layout
 
 ```
 my-skill/
-├── SKILL.md          # frontmatter + compressed core body
+├── SKILL.md          # frontmatter + compressed core body (always loaded)
 ├── examples.md       # on-demand (created by Stage 2)
 ├── templates.md      # on-demand
 ├── background.md     # on-demand
-└── scripts/          # unchanged (not counted as context bloat)
+└── scripts/          # executable tools (not context-injected)
 ```
+
+After optimization, reference files include routing metadata (`when`, `topics`) so the agent can load them selectively.
 
 ## CLI
 
@@ -76,10 +87,20 @@ my-skill/
 | `--dry-run` | Report savings without writing files |
 | `--no-llm` | Heuristic mode (no API calls) |
 
+## Issue codes (audit)
+
+| Code | Meaning |
+|------|---------|
+| `F1_MISSING_DESCRIPTION` | No routing description in frontmatter |
+| `F1_SHORT_DESCRIPTION` | Description too short for reliable routing |
+| `F1_VERBOSE_DESCRIPTION` | Description likely contains non-routing filler |
+| `F2_LARGE_BODY` / `F2_LONG_BODY` | Body too large; use progressive disclosure |
+| `F2_MONOLITHIC` | Examples/templates embedded in SKILL.md |
+| `F3_HEAVY_REFERENCES` | Reference files consume excessive tokens |
+
 ## Safety
 
 - Never modifies skills in-place by default; output goes to `--output`.
-- Refuses paths under `skills-cursor` (Cursor built-in skills).
 
 ## Development
 
@@ -88,10 +109,16 @@ pytest
 ruff check src tests
 ```
 
-## Reference
+## Research & citation
 
-Based on **SkillReducer: Optimizing LLM Agent Skills for Token Efficiency** (Gao et al., 2026). See `skill_reducer.pdf` in this repository.
+| Resource | Description |
+|----------|-------------|
+| [CITATION.md](CITATION.md) | BibTeX and APA citation for the paper |
+| [PAPER_DETAIL.md](PAPER_DETAIL.md) | In-depth explanation of the paper |
+| [skill_reducer.pdf](skill_reducer.pdf) | Original paper (local copy) |
+
+If you use this tool in research, please cite the **SkillReducer paper** (Gao et al., 2026), not this repository alone.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE). The SkillReducer research paper is © its authors; this repo is an independent implementation.
