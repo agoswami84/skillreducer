@@ -23,6 +23,8 @@ class Config:
     max_feedback_iterations: int = 2
     max_restore_steps: int = 3
     num_test_queries: int = 8
+    num_distractors: int = 4
+    include_adversarial: bool = True
     use_llm: bool = True
 
     @classmethod
@@ -54,6 +56,8 @@ class Config:
                         "max_restore_steps", cls.max_restore_steps
                     ),
                     "num_test_queries": oracle.get("num_test_queries", cls.num_test_queries),
+                    "num_distractors": oracle.get("num_distractors", cls.num_distractors),
+                    "include_adversarial": oracle.get("include_adversarial", cls.include_adversarial),
                     "use_llm": loaded.get("use_llm", True),
                 }
                 break

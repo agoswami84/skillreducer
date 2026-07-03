@@ -48,3 +48,50 @@ Return JSON:
   "description": "single combined third-person description string"
 }}
 """
+
+BUILD_TEST_QUERIES_PROMPT = """\
+Generate {num_queries} diverse user queries that should trigger this agent skill.
+
+Skill name: {skill_name}
+Description: {description}
+
+Body excerpt:
+{body}
+
+Return JSON: {{"queries": ["...", "..."]}}
+Each query should be a realistic user request that routes to this skill only.
+"""
+
+ADVERSARIAL_SKILL_PROMPT = """\
+Generate a plausible adversarial "shadow" skill in the SAME domain as the target
+but with a DIFFERENT purpose — designed to be confusable when the target description is vague.
+
+Target skill: {target_name}
+Target description: {target_description}
+
+Example: target "JWT authentication" -> adversarial "OAuth 2.0 token refresh".
+
+Return JSON:
+{{
+  "name": "kebab-case-skill-name",
+  "description": "third-person routing description for the shadow skill"
+}}
+"""
+
+ROUTING_SELECT_PROMPT = """\
+You are a skill routing model. Select exactly ONE skill for the user query.
+Reply with JSON only: {{"selected": "<skill_name>"}}
+
+Query: {query}
+
+Candidates:
+{candidates}
+"""
+
+POLISH_DESCRIPTION_PROMPT = """\
+Polish this skill routing description for grammatical coherence.
+Preserve all routing meaning. Third person only. Return only the polished text.
+
+Description:
+{description}
+"""

@@ -11,6 +11,8 @@ from skillreducer.models import ReduceReport, TokenStats
 from skillreducer.parser import parse_skill_md, write_skill_md
 from skillreducer.stage1.compress import compress_description
 from skillreducer.stage1.agent import Stage1RoutingAgent
+from skillreducer.stage1.generate import generate_description
+from skillreducer.stage1.oracle import build_stage1_oracle, load_skill_library
 from skillreducer.stage2.disclose import (
     deduplicate_existing_references,
     restructure_body,
@@ -43,21 +45,39 @@ def reduce_skill(
     run_stage2 = stage in (None, 2)
 
     if run_stage1:
+        skill_library = load_skill_library(skill)
         if stage1_agent is not None:
-            stage1_result = stage1_agent.run(skill)
+            stage1_result = stage1_agent.run(skill, skill_library=skill_library)
             description = stage1_result.description
             notes.extend(stage1_result.notes)
         else:
-            from skillreducer.stage1.generate import generate_description
+            llm_for_stage1 = llm_client if llm_client.enabled else None
+            oracle_ctx = (
+                build_stage1_oracle(skill, llm_for_stage1, config, skill_library)
+                if llm_for_stage1
+                else None
+            )
 
             if not description.strip() or count_tokens(description) <= config.short_description_tokens:
-                description = generate_description(skill, llm_client if llm_client.enabled else None)
+                description = generate_description(
+                    skill,
+                    llm_for_stage1,
+                    oracle_ctx=oracle_ctx,
+                    config=config,
+                )
                 notes.append("Stage 1: generated description from body")
+                if oracle_ctx:
+                    oracle_ctx.original_description = description
+
             if description.strip():
                 description, stage1_notes = compress_description(
                     description,
-                    llm_client if llm_client.enabled else None,
+                    llm_for_stage1,
+                    skill=skill,
+                    oracle_ctx=oracle_ctx,
+                    skill_library=skill_library,
                     max_restore_steps=config.max_restore_steps,
+                    config=config,
                 )
                 notes.extend(stage1_notes)
 

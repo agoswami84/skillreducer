@@ -1,3 +1,5 @@
+"""Stage 1 delta debugging (DDMIN) over semantic description clauses."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -7,6 +9,11 @@ def ddmin(
     units: list[str],
     oracle: Callable[[list[str]], bool],
 ) -> list[str]:
+    """Find a 1-minimal clause subset U* subset of U via delta debugging.
+
+    Stage 1 Phase 1: partition-and-test over semantic clauses using oracle O(d,Q,C).
+    Requires O(n log n) oracle calls vs O(2^n) exhaustive search.
+    """
     if not units:
         return []
     if len(units) == 1:

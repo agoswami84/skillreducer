@@ -1,0 +1,56 @@
+# solid-docstring.cursorrules
+
+name: "Python SOLID + Docstring Enforcement"
+description: "Generate Python code following SOLID principles and include docstrings for all public classes, methods, and functions."
+
+triggers:
+  - "*.py"
+
+rules:
+  - id: enforce-single-responsibility
+    description: "Each class should have one clear responsibility."
+    instruction: |
+      When generating classes, ensure they encapsulate a single responsibility.
+      Split functionality into separate classes if multiple concerns are mixed.
+
+  - id: enforce-open-closed
+    description: "Classes should be open for extension but closed for modification."
+    instruction: |
+      Prefer abstract base classes or interfaces for extensibility.
+      Avoid editing existing class internals when adding new features.
+
+  - id: enforce-liskov-substitution
+    description: "Subtypes must be substitutable for their base types."
+    instruction: |
+      Ensure derived classes honor the contracts of their base classes.
+      Avoid breaking expected behavior when overriding methods.
+
+  - id: enforce-interface-segregation
+    description: "Clients should not depend on methods they do not use."
+    instruction: |
+      Generate small, focused interfaces.
+      Avoid bloated classes with unused methods.
+
+  - id: enforce-dependency-inversion
+    description: "Depend on abstractions, not concretions."
+    instruction: |
+      Use dependency injection and abstract classes.
+      Avoid hardcoding dependencies inside classes.
+
+  - id: enforce-docstrings
+    description: "All public classes, methods, and functions must include docstrings."
+    instruction: |
+      Generate docstrings in Google-style format:
+      ```
+      def foo(bar: int) -> str:
+          """
+          Brief summary of function.
+
+          Args:
+              bar (int): Description of parameter.
+
+          Returns:
+              str: Description of return value.
+          """
+      ```
+      Ensure every function, class, and module has a descriptive docstring.

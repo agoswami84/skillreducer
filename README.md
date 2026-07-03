@@ -12,7 +12,7 @@ Works with **any agent platform** that uses the standard `SKILL.md` + YAML front
 
 Every token in a skill description and body competes for context window space. SkillReducer debloats skills in two stages:
 
-1. **Stage 1 — Routing layer:** compress or generate YAML `description` fields so agents route correctly with fewer tokens.
+1. **Stage 1 — Routing layer:** compress or generate YAML `description` fields so agents route correctly with fewer tokens. See [stage1/README.md](skillreducer/stage1/README.md).
 2. **Stage 2 — Body restructuring:** classify content (core rules, examples, templates, background), keep essentials in `SKILL.md`, and move the rest into on-demand reference files.
 
 ## Install
@@ -92,6 +92,8 @@ skillreducer reduce path/to/skill
 ```
 
 Use `--no-llm` to force heuristic-only mode.
+
+See **[skillreducer/stage1/README.md](skillreducer/stage1/README.md)** for Stage 1 architecture (Algorithm 1), module map, oracle configuration, and Python API.
 
 ## Agno agent (recommended)
 

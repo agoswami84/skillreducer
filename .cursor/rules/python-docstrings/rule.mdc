@@ -1,0 +1,68 @@
+---
+description: Require Google-style docstrings on every new class, method, and function
+alwaysApply: true
+---
+
+# Python Docstrings (Mandatory)
+
+When you **create or substantially rewrite** a module, class, method, or function, include a docstring. Do not leave new public APIs undocumented.
+
+## Format
+
+Use **Google style**. First line is a one-sentence summary. Add sections only when they add information.
+
+## Functions and methods
+
+```python
+def launch_module(parent: QWidget, command: dict, tool_name: str) -> None:
+    """Launch a bundled tool in a separate process.
+
+    Args:
+        parent: Parent widget used for license and error dialogs.
+        command: Resolved tool metadata from ``find_tool``.
+        tool_name: Display name shown in error messages.
+
+    Raises:
+        FileNotFoundError: If the tool script path is missing before launch.
+    """
+```
+
+- Document every parameter in ``Args`` (name + type implied by hints + purpose).
+- Document ``Returns`` when not ``None``.
+- Document ``Raises`` for intentional exceptions.
+- Private helpers (``_name``) may use a **one-line** docstring.
+
+## Classes
+
+```python
+class ProfileCanvas(QWidget):
+    """Render the Sollvian profile image with invisible clickable hotspots."""
+
+class SolutionModule:
+    """Launch metadata for one clickable profile icon.
+
+    Attributes:
+        key: Stable module identifier.
+        hotspot: Normalized click region as ``(x1, y1, x2, y2)`` fractions.
+        tool_name: Human-readable module name for dialogs.
+        command: Resolved script path metadata from ``find_tool``.
+    """
+```
+
+- Class docstring: responsibility and when to use it.
+- Document public attributes in ``Attributes`` when not obvious from names.
+
+## Modules
+
+New ``.py`` files start with a **module docstring** (one line is enough for small files):
+
+```python
+"""Sollvian company profile launcher — image background with clickable solution icons."""
+```
+
+## Do not
+
+- Skip docstrings on new ``def``, ``class``, or new files.
+- Use placeholder text (`TODO`, `Description here`, empty triple quotes).
+- Repeat the signature verbatim without explaining behavior.
+- Add lazy imports inside functions or methods (use module-level imports; see `python-modern` rule).
