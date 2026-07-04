@@ -71,11 +71,8 @@ Target description: {target_description}
 
 Example: target "JWT authentication" -> adversarial "OAuth 2.0 token refresh".
 
-Return JSON:
-{{
-  "name": "kebab-case-skill-name",
-  "description": "third-person routing description for the shadow skill"
-}}
+Reply with ONLY a single JSON object, no markdown fences, no explanation:
+{{"name": "kebab-case-skill-name", "description": "third-person routing description for the shadow skill"}}
 """
 
 ROUTING_SELECT_PROMPT = """\

@@ -1,28 +1,24 @@
 from __future__ import annotations
 
-import json
-import os
 from typing import Any
 
 from openai import OpenAI
 
-from skillreducer.config import Config
+from skillreducer.config import Config, resolve_api_base_url, resolve_api_key
+from skillreducer.llm.json_util import parse_llm_json
 
 
 class LLMClient:
     def __init__(self, config: Config) -> None:
-        api_key = (
-            config.api_key
-            or os.environ.get("OPENAI_API_KEY")
-            or os.environ.get("SKILLREDUCER_API_KEY")
-        )
+        api_key = resolve_api_key(config)
         if not api_key:
             self._client = None
             self._enabled = False
         else:
             kwargs: dict[str, Any] = {"api_key": api_key}
-            if config.base_url:
-                kwargs["base_url"] = config.base_url
+            base_url = resolve_api_base_url(config)
+            if base_url:
+                kwargs["base_url"] = base_url
             self._client = OpenAI(**kwargs)
             self._enabled = config.use_llm
         self._config = config
@@ -34,7 +30,7 @@ class LLMClient:
     def complete(self, prompt: str, model: str | None = None, system: str | None = None) -> str:
         if not self.enabled:
             raise RuntimeError(
-                "LLM client is not configured. Set OPENAI_API_KEY or config.yaml api_key."
+                "LLM client is not configured. Set api_key in .env or config.yaml."
             )
         messages: list[dict[str, str]] = []
         if system:
@@ -48,6 +44,6 @@ class LLMClient:
         return (response.choices[0].message.content or "").strip()
 
     def complete_json(self, prompt: str, model: str | None = None, system: str | None = None) -> Any:
+        """Return parsed JSON, or None if the model reply is empty / not JSON."""
         text = self.complete(prompt, model=model, system=system)
-        text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        return json.loads(text)
+        return parse_llm_json(text)

@@ -11,9 +11,9 @@ from skillreducer.agent_prompts import (
     SKILL_REDUCER_DESCRIPTION,
     SKILL_REDUCER_INSTRUCTIONS,
 )
-from skillreducer.config import Config
+from skillreducer.config import Config, resolve_api_key
 from skillreducer.llm.agno_client import AgnoLLMClient
-from skillreducer.model import create_compression_model, resolve_api_key
+from skillreducer.model import create_compression_model
 from skillreducer.models import ReduceReport
 from skillreducer.parser import find_skill_paths, parse_skill_md, resolve_skill_md
 from skillreducer.pipeline import reduce_skill
@@ -51,7 +51,10 @@ def create_completion_agent(config: Config) -> Agent:
     if Agent is None:
         raise ImportError("agno is not installed. Install with: pip install agno")
     if not resolve_api_key(config):
-        raise ValueError("API key required for Agno agent. Set OPENAI_API_KEY or config api_key.")
+        raise ValueError(
+            "API key required for Agno agent. Set api_key in .env or environment, "
+            "or in config.yaml."
+        )
 
     return Agent(
         name="skillreducer-stage2-compression",
@@ -68,7 +71,10 @@ def create_skill_reducer_agent(config: Config) -> Agent:
     if Agent is None:
         raise ImportError("agno is not installed. Install with: pip install agno")
     if not resolve_api_key(config):
-        raise ValueError("API key required for Agno agent. Set OPENAI_API_KEY or config api_key.")
+        raise ValueError(
+            "API key required for Agno agent. Set api_key in .env or environment, "
+            "or in config.yaml."
+        )
 
     return Agent(
         name="skillreducer",

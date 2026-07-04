@@ -16,8 +16,11 @@ def segment_description(description: str, llm: LLMClient | None) -> list[str]:
     """
     if llm and llm.enabled:
         result = llm.complete_json(prompts.SEGMENT_DESCRIPTION.format(description=description))
-        clauses = result.get("clauses", [])
-        return [str(c).strip() for c in clauses if str(c).strip()]
+        if isinstance(result, dict):
+            clauses = result.get("clauses", [])
+            parsed = [str(c).strip() for c in clauses if str(c).strip()]
+            if parsed:
+                return parsed
     return _heuristic_segment(description)
 
 

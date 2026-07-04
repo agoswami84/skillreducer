@@ -34,16 +34,32 @@ Then run directly — no Python required on the target machine:
 ./dist/skillreducer agent path/to/my-skill
 ```
 
-### From source
+### From source (no binary)
 
 ```bash
 pip install -e .
+# optional: pip install -e ".[dev]"
 ```
 
-Optional dev dependencies:
+Copy `.env.example` to `.env` and set credentials:
 
 ```bash
-pip install -e ".[dev]"
+cp .env.example .env
+# edit .env:
+#   api_key=sk-...
+#   api_base_url=https://api.openai.com/v1
+```
+
+Run without building a binary (loads `.env` automatically):
+
+```bash
+python run.py audit data --recursive
+python run.py reduce data/pdf-processing --stage 1
+python run.py agent data/marketing-strategy --stage 1
+
+# or after pip install -e .
+python -m skillreducer reduce data/pdf-processing --stage 1
+skillreducer reduce data/pdf-processing --stage 1
 ```
 
 ## Quick start
@@ -51,11 +67,11 @@ pip install -e ".[dev]"
 Sample skills are in [`data/`](data/) — run SkillReducer against them immediately:
 
 ```bash
-skillreducer audit data --recursive
-skillreducer reduce data/pdf-processing --no-llm
-skillreducer agent data/marketing-strategy --output optimized/
-skillreducer agent data --recursive
+python run.py audit data --recursive
+python run.py reduce data/pdf-processing --no-llm
+python run.py agent data/marketing-strategy --output optimized/
 ```
+
 
 See [data/README.md](data/README.md) for what each sample skill demonstrates.
 
@@ -82,16 +98,30 @@ skillreducer reduce ./my-skill-library --recursive
 
 ## Configuration
 
-Copy `config.example.yaml` to `config.yaml` or `~/.config/skillreducer/config.yaml`.
+### API key and base URL (from env)
 
-Set `OPENAI_API_KEY` (or `SKILLREDUCER_API_KEY`) for LLM-powered segmentation and classification. Without an API key, the tool falls back to heuristics.
+Credentials are read from `.env` (or the environment). Env vars override `config.yaml`.
+
+| Setting | Name |
+|---------|------|
+| **API key** | `api_key` |
+| **API base URL** | `api_base_url` |
 
 ```bash
-export OPENAI_API_KEY=sk-...
-skillreducer reduce path/to/skill
+# .env (recommended)
+api_key=sk-...
+api_base_url=https://api.openai.com/v1
 ```
 
-Use `--no-llm` to force heuristic-only mode.
+Optional YAML (`config.example.yaml` → `config.yaml`):
+
+```yaml
+api_key: sk-...
+api_base_url: https://api.openai.com/v1
+```
+
+Without an API key, LLM features are disabled and heuristics are used. Use `--no-llm` to force heuristic-only mode.
+
 
 See **[skillreducer/stage1/README.md](skillreducer/stage1/README.md)** for Stage 1 architecture (Algorithm 1), module map, oracle configuration, and Python API.
 
@@ -122,7 +152,7 @@ print(result.agent_summary)      # token savings summary
 - [`model.py`](skillreducer/model.py) — Agno `OpenAIChat` client factory from config
 - [`agent.py`](skillreducer/agent.py) — `SkillReducerAgent` orchestrator + `AgnoLLMClient` for pipeline LLM steps
 
-Requires `OPENAI_API_KEY` (or `api_key` in `config.yaml`).
+Requires `api_key` in `.env` (or `config.yaml`).
 
 ## Standard skill layout
 

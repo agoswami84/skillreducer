@@ -9,7 +9,7 @@ skillreducer audit data --recursive
 # Optimize one skill (heuristic, no API key)
 skillreducer reduce data/pdf-processing --no-llm
 
-# Optimize with Agno agent (requires OPENAI_API_KEY)
+# Optimize with Agno agent (requires api_key in .env)
 skillreducer agent data/pdf-processing
 
 # Batch optimize entire data folder

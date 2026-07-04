@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from skillreducer.config import Config
+from skillreducer.config import Config, resolve_api_key
 from skillreducer.llm.agno_client import AgnoLLMClient
-from skillreducer.model import create_routing_model, resolve_api_key
+from skillreducer.model import create_routing_model
 from skillreducer.models import Skill
 from skillreducer.stage1.compress import compress_description
 from skillreducer.stage1.generate import generate_description
@@ -46,7 +46,9 @@ def create_stage1_routing_agent(config: Config) -> Agent:
     if Agent is None:
         raise ImportError("agno is not installed. Install with: pip install agno")
     if not resolve_api_key(config):
-        raise ValueError("API key required. Set OPENAI_API_KEY or config api_key.")
+        raise ValueError(
+            "API key required. Set api_key in .env or environment, or in config.yaml."
+        )
 
     return Agent(
         name="skillreducer-stage1-routing",

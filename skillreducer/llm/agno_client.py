@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
+
+from skillreducer.llm.json_util import parse_llm_json
 
 try:
     from agno.agent import Agent
@@ -31,6 +32,6 @@ class AgnoLLMClient:
         return content.strip() if isinstance(content, str) else str(content).strip()
 
     def complete_json(self, prompt: str, model: str | None = None, system: str | None = None) -> Any:
+        """Return parsed JSON, or None if the model reply is empty / not JSON."""
         text = self.complete(prompt, model=model, system=system)
-        text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        return json.loads(text)
+        return parse_llm_json(text)

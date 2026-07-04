@@ -1,7 +1,7 @@
 models:
-  compression: meta-llama/Llama-3.3-70B-Instruct:groq
-  routing_oracle: meta-llama/Llama-3.3-70B-Instruct:groq
-  evaluation: meta-llama/Llama-3.3-70B-Instruct:groq
+  compression: openai/gpt-oss-120b:cerebras
+  routing_oracle: openai/gpt-oss-120b:cerebras
+  evaluation: openai/gpt-oss-120b:cerebras
 
 thresholds:
   short_description_tokens: 40
@@ -18,4 +18,4 @@ oracle:
 # api_key: sk-...
 # api_base_url: https://api.openai.com/v1
 # base_url: https://api.openai.com/v1   # alias for api_base_url
-use_llm: true
+use_llm: True

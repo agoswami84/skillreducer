@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
-from skillreducer.config import Config
+from skillreducer.config import Config, resolve_api_base_url, resolve_api_key
 
 if TYPE_CHECKING:
     from agno.models.base import Model
@@ -14,14 +13,6 @@ try:
     from agno.models.openai import OpenAIChat
 except ImportError:  # pragma: no cover - optional at type-check time
     OpenAIChat = None  # type: ignore[misc, assignment]
-
-
-def resolve_api_key(config: Config) -> str | None:
-    return (
-        config.api_key
-        or os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("SKILLREDUCER_API_KEY")
-    )
 
 
 def create_openai_chat(
@@ -37,7 +28,7 @@ def create_openai_chat(
     api_key = resolve_api_key(config)
     if not api_key:
         raise ValueError(
-            "No API key found. Set OPENAI_API_KEY, SKILLREDUCER_API_KEY, or api_key in config.yaml"
+            "No API key found. Set api_key in .env or config.yaml."
         )
 
     kwargs: dict = {
@@ -45,8 +36,9 @@ def create_openai_chat(
         "api_key": api_key,
         "temperature": temperature,
     }
-    if config.base_url:
-        kwargs["base_url"] = config.base_url
+    base_url = resolve_api_base_url(config)
+    if base_url:
+        kwargs["base_url"] = base_url
     return OpenAIChat(**kwargs)
 
 

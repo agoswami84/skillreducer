@@ -25,11 +25,16 @@ def classify_paragraphs(paragraphs: list[str], llm: LLMClient | None) -> list[Co
     if llm and llm.enabled and paragraphs:
         numbered = "\n\n".join(f"[{i}] {p}" for i, p in enumerate(paragraphs))
         result = llm.complete_json(prompts.CLASSIFY_PARAGRAPHS.format(paragraphs=numbered))
-        mapping = {int(item["index"]): ContentType(item["type"]) for item in result.get("items", [])}
-        return [
-            ContentItem(text=p, content_type=mapping.get(i, ContentType.CORE_RULE), index=i)
-            for i, p in enumerate(paragraphs)
-        ]
+        if isinstance(result, dict) and result.get("items"):
+            mapping = {
+                int(item["index"]): ContentType(item["type"])
+                for item in result["items"]
+                if isinstance(item, dict) and "index" in item and "type" in item
+            }
+            return [
+                ContentItem(text=p, content_type=mapping.get(i, ContentType.CORE_RULE), index=i)
+                for i, p in enumerate(paragraphs)
+            ]
     return [_heuristic_classify(p, i) for i, p in enumerate(paragraphs)]
 
 

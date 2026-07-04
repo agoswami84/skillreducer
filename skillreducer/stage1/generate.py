@@ -31,9 +31,10 @@ def generate_description(
 
     if llm and llm.enabled:
         result = llm.complete_json(prompts.GENERATE_DESCRIPTION.format(body=skill.body[:8000]))
-        candidate = str(result.get("description", "")).strip()
-        if candidate and _validate_generated(candidate, ctx, llm):
-            return candidate
+        if isinstance(result, dict):
+            candidate = str(result.get("description", "")).strip()
+            if candidate and _validate_generated(candidate, ctx, llm):
+                return candidate
 
     heuristic = _heuristic_description(skill)
     if _validate_generated(heuristic, ctx, llm):

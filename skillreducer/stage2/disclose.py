@@ -89,8 +89,9 @@ def annotate_reference(content: str, llm: LLMClient | None) -> tuple[str, str, l
     if llm and llm.enabled:
         try:
             meta = llm.complete_json(prompts.GEN_REFERENCE_META.format(content=content[:4000]))
-            when = str(meta.get("when", when))
-            topics = [str(t) for t in meta.get("topics", topics)]
+            if isinstance(meta, dict):
+                when = str(meta.get("when", when))
+                topics = [str(t) for t in meta.get("topics", topics)]
         except Exception:
             pass
     header = (
