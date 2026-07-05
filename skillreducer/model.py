@@ -28,7 +28,7 @@ def create_openai_chat(
     api_key = resolve_api_key(config)
     if not api_key:
         raise ValueError(
-            "No API key found. Set api_key in .env or config.yaml."
+            "No API key found. Set api_key in the environment, .env, or config.yaml."
         )
 
     kwargs: dict = {

@@ -35,27 +35,27 @@ def load_dotenv(path: Path | None = None) -> None:
 
 
 def resolve_api_key(config: Config | None = None) -> str | None:
-    """Resolve API key: config.yaml, then environment variables."""
-    if config and config.api_key:
-        return config.api_key
+    """Resolve API key: environment variables override config.yaml / Config fields."""
     for name in _API_KEY_ENV:
         value = os.environ.get(name)
         if value:
             return value
+    if config and config.api_key:
+        return config.api_key
     return None
 
 
 def resolve_api_base_url(config: Config | None = None) -> str | None:
-    """Resolve API base URL: config.yaml (base_url / api_base_url), then environment."""
+    """Resolve API base URL: environment overrides config.yaml (base_url / api_base_url)."""
+    for name in _API_BASE_URL_ENV:
+        value = os.environ.get(name)
+        if value:
+            return value
     if config:
         if config.api_base_url:
             return config.api_base_url
         if config.base_url:
             return config.base_url
-    for name in _API_BASE_URL_ENV:
-        value = os.environ.get(name)
-        if value:
-            return value
     return None
 
 

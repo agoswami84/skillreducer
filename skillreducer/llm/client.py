@@ -30,7 +30,7 @@ class LLMClient:
     def complete(self, prompt: str, model: str | None = None, system: str | None = None) -> str:
         if not self.enabled:
             raise RuntimeError(
-                "LLM client is not configured. Set api_key in .env or config.yaml."
+                "LLM client is not configured. Set api_key in the environment, .env, or config.yaml."
             )
         messages: list[dict[str, str]] = []
         if system:
