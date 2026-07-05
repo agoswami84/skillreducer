@@ -14,6 +14,9 @@ DEFAULT_CONFIG_PATHS = [
 # Env / .env field names (only these).
 _API_KEY_ENV = ("api_key",)
 _API_BASE_URL_ENV = ("api_base_url",)
+_AZURE_SUBSCRIPTION_ENV = ("azure_subscription",)
+_AZURE_ENDPOINT_ENV = ("azure_endpoint",)
+_API_VERSION_ENV = ("api_version", "azure_api_version")
 _COMPRESSION_MODEL_ENV = ("compression_model", "compression")
 _ROUTING_MODEL_ENV = ("routing_model", "routing_oracle")
 _EVALUATION_MODEL_ENV = ("evaluation_model", "evaluation")
@@ -98,6 +101,21 @@ def _env_value(*names: str) -> str | None:
     return None
 
 
+def _env_bool(*names: str) -> bool | None:
+    value = _env_value(*names)
+    if value is None:
+        return None
+    return value.lower() in ("1", "true", "yes", "on")
+
+
+def normalize_azure_endpoint(url: str) -> str:
+    """Strip OpenAI v1 suffix so AzureOpenAI gets a resource endpoint."""
+    endpoint = url.rstrip("/")
+    if endpoint.endswith("/openai/v1"):
+        endpoint = endpoint[: -len("/openai/v1")]
+    return endpoint.rstrip("/") + "/"
+
+
 def resolve_api_key(config: Config | None = None) -> str | None:
     """Resolve API key: environment variables override config.yaml / Config fields."""
     value = _env_value(*_API_KEY_ENV)
@@ -151,6 +169,39 @@ def resolve_evaluation_model(config: Config | None = None) -> str:
     return Config.evaluation_model
 
 
+def resolve_azure_subscription(config: Config | None = None) -> bool:
+    """Resolve Azure mode: environment overrides config.yaml."""
+    value = _env_bool(*_AZURE_SUBSCRIPTION_ENV)
+    if value is not None:
+        return value
+    if config:
+        return config.azure_subscription
+    return False
+
+
+def resolve_azure_endpoint(config: Config | None = None) -> str | None:
+    """Resolve Azure resource endpoint: env azure_endpoint, then api_base_url."""
+    value = _env_value(*_AZURE_ENDPOINT_ENV)
+    if value:
+        return normalize_azure_endpoint(value)
+    if config and config.azure_endpoint:
+        return normalize_azure_endpoint(config.azure_endpoint)
+    base_url = resolve_api_base_url(config)
+    if base_url:
+        return normalize_azure_endpoint(base_url)
+    return None
+
+
+def resolve_api_version(config: Config | None = None) -> str:
+    """Resolve Azure API version: environment overrides config.yaml."""
+    value = _env_value(*_API_VERSION_ENV)
+    if value:
+        return value
+    if config and config.api_version:
+        return config.api_version
+    return Config.api_version
+
+
 @dataclass
 class Config:
     compression_model: str = "gpt-4o-mini"
@@ -159,6 +210,9 @@ class Config:
     api_key: str | None = None
     api_base_url: str | None = None
     base_url: str | None = None  # alias for api_base_url (config.yaml compatibility)
+    azure_subscription: bool = False
+    azure_endpoint: str | None = None
+    api_version: str = "2024-10-21"
     short_description_tokens: int = 40
     min_reference_tokens: int = 30
     max_feedback_iterations: int = 2
@@ -188,6 +242,9 @@ class Config:
                     "api_key": loaded.get("api_key"),
                     "api_base_url": api_base,
                     "base_url": api_base,
+                    "azure_subscription": bool(loaded.get("azure_subscription", False)),
+                    "azure_endpoint": loaded.get("azure_endpoint"),
+                    "api_version": loaded.get("api_version", cls.api_version),
                     "short_description_tokens": thresholds.get(
                         "short_description_tokens", cls.short_description_tokens
                     ),
@@ -233,5 +290,17 @@ class Config:
         env_evaluation = _env_value(*_EVALUATION_MODEL_ENV)
         if env_evaluation:
             config.evaluation_model = env_evaluation
+
+        env_azure = _env_bool(*_AZURE_SUBSCRIPTION_ENV)
+        if env_azure is not None:
+            config.azure_subscription = env_azure
+
+        env_azure_endpoint = _env_value(*_AZURE_ENDPOINT_ENV)
+        if env_azure_endpoint:
+            config.azure_endpoint = normalize_azure_endpoint(env_azure_endpoint)
+
+        env_api_version = _env_value(*_API_VERSION_ENV)
+        if env_api_version:
+            config.api_version = env_api_version
 
         return config

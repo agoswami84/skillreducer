@@ -8,8 +8,12 @@ import pytest
 from skillreducer.config import (
     Config,
     load_dotenv,
+    normalize_azure_endpoint,
     resolve_api_base_url,
     resolve_api_key,
+    resolve_api_version,
+    resolve_azure_endpoint,
+    resolve_azure_subscription,
     resolve_compression_model,
     resolve_routing_model,
 )
@@ -32,6 +36,10 @@ def clear_credential_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("routing_oracle", raising=False)
     monkeypatch.delenv("evaluation_model", raising=False)
     monkeypatch.delenv("evaluation", raising=False)
+    monkeypatch.delenv("azure_subscription", raising=False)
+    monkeypatch.delenv("azure_endpoint", raising=False)
+    monkeypatch.delenv("api_version", raising=False)
+    monkeypatch.delenv("azure_api_version", raising=False)
 
 
 def test_load_dotenv_finds_env_in_parent_directory(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -212,4 +220,84 @@ def test_llm_client_uses_same_resolved_credentials() -> None:
     mock_openai.assert_called_once_with(
         api_key="shared-env-key",
         base_url="https://shared.example/v1",
+    )
+
+
+def test_normalize_azure_endpoint_strips_openai_v1_suffix() -> None:
+    assert (
+        normalize_azure_endpoint("https://my-resource.openai.azure.com/openai/v1/")
+        == "https://my-resource.openai.azure.com/"
+    )
+
+
+def test_resolve_azure_subscription_prefers_environment_over_config() -> None:
+    config = Config(azure_subscription=False)
+    with patch.dict(os.environ, {"azure_subscription": "true"}):
+        assert resolve_azure_subscription(config) is True
+
+
+def test_config_load_merges_azure_settings(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "azure_subscription: false\n"
+        "azure_endpoint: https://yaml.example.openai.azure.com/\n"
+        "api_version: 2024-02-01\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("azure_subscription", "true")
+    monkeypatch.setenv("azure_endpoint", "https://env.example.openai.azure.com/")
+    monkeypatch.setenv("api_version", "2024-10-21")
+
+    config = Config.load(config_path)
+
+    assert config.azure_subscription is True
+    assert resolve_azure_endpoint(config) == "https://env.example.openai.azure.com/"
+    assert resolve_api_version(config) == "2024-10-21"
+
+
+def test_agents_use_azure_openai_when_subscription_enabled() -> None:
+    config = Config(
+        api_key="azure-key",
+        azure_subscription=True,
+        azure_endpoint="https://my-resource.openai.azure.com/",
+        compression_model="gpt-4o-deployment",
+        routing_model="routing-deployment",
+        evaluation_model="eval-deployment",
+    )
+    captured: list[dict] = []
+
+    class FakeAzureOpenAI:
+        def __init__(self, **kwargs) -> None:
+            captured.append(kwargs)
+
+    with patch("skillreducer.model.AzureOpenAI", FakeAzureOpenAI):
+        create_openai_chat(config)
+        create_compression_model(config)
+        create_routing_model(config)
+        create_evaluation_model(config)
+
+    assert len(captured) == 4
+    assert captured[0]["id"] == "gpt-4o-deployment"
+    assert captured[2]["id"] == "routing-deployment"
+    for kwargs in captured:
+        assert kwargs["api_key"] == "azure-key"
+        assert kwargs["azure_endpoint"] == "https://my-resource.openai.azure.com/"
+        assert kwargs["azure_deployment"] == kwargs["id"]
+        assert kwargs["api_version"] == "2024-10-21"
+
+
+def test_llm_client_uses_azure_openai_when_subscription_enabled() -> None:
+    config = Config(
+        api_key="azure-key",
+        azure_subscription=True,
+        azure_endpoint="https://my-resource.openai.azure.com/",
+    )
+
+    with patch("skillreducer.llm.client.AzureOpenAI") as mock_azure:
+        LLMClient(config)
+
+    mock_azure.assert_called_once_with(
+        api_key="azure-key",
+        api_version="2024-10-21",
+        azure_endpoint="https://my-resource.openai.azure.com/",
     )

@@ -15,6 +15,8 @@ hiddenimports = [
     "agno.models",
     "agno.models.openai",
     "agno.models.openai.chat",
+    "agno.models.azure",
+    "agno.models.azure.openai_chat",
     "agno.run.agent",
     "tiktoken",
     "tiktoken_ext.openai_public",

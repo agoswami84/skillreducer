@@ -2,9 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from openai import OpenAI
+from openai import AzureOpenAI, OpenAI
 
-from skillreducer.config import Config, resolve_api_base_url, resolve_api_key, resolve_compression_model
+from skillreducer.config import (
+    Config,
+    resolve_api_base_url,
+    resolve_api_key,
+    resolve_api_version,
+    resolve_azure_endpoint,
+    resolve_azure_subscription,
+    resolve_compression_model,
+)
 from skillreducer.llm.json_util import parse_llm_json
 
 
@@ -14,8 +22,18 @@ class LLMClient:
         if not api_key:
             self._client = None
             self._enabled = False
+        elif resolve_azure_subscription(config):
+            kwargs: dict[str, Any] = {
+                "api_key": api_key,
+                "api_version": resolve_api_version(config),
+            }
+            endpoint = resolve_azure_endpoint(config)
+            if endpoint:
+                kwargs["azure_endpoint"] = endpoint
+            self._client = AzureOpenAI(**kwargs)
+            self._enabled = config.use_llm
         else:
-            kwargs: dict[str, Any] = {"api_key": api_key}
+            kwargs = {"api_key": api_key}
             base_url = resolve_api_base_url(config)
             if base_url:
                 kwargs["base_url"] = base_url

@@ -18,4 +18,10 @@ oracle:
 # api_key: sk-...
 # api_base_url: https://api.openai.com/v1
 # base_url: https://api.openai.com/v1   # alias for api_base_url
+#
+# Azure OpenAI (set azure_subscription: true)
+# azure_subscription: true
+# api_key: <azure-api-key>
+# azure_endpoint: https://<resource>.openai.azure.com/
+# api_version: 2024-10-21
 use_llm: true
