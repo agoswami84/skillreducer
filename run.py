@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run skillreducer from source without building a binary.
 
-Loads .env (api_key / api_base_url), then dispatches to the CLI.
+Loads .env (api_key / api_base_url / model ids), then dispatches to the CLI.
 
 Usage:
     python run.py audit data --recursive
@@ -19,13 +19,12 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from skillreducer.config import load_dotenv  # noqa: E402
+from skillreducer.config import ensure_dotenv_loaded  # noqa: E402
 from skillreducer.cli import main  # noqa: E402
 
 
 def run() -> None:
-    load_dotenv(ROOT / ".env")
-    load_dotenv()  # also cwd .env if different
+    ensure_dotenv_loaded()
     main()
 
 

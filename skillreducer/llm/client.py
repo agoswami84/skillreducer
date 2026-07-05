@@ -4,7 +4,7 @@ from typing import Any
 
 from openai import OpenAI
 
-from skillreducer.config import Config, resolve_api_base_url, resolve_api_key
+from skillreducer.config import Config, resolve_api_base_url, resolve_api_key, resolve_compression_model
 from skillreducer.llm.json_util import parse_llm_json
 
 
@@ -37,7 +37,7 @@ class LLMClient:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
         response = self._client.chat.completions.create(
-            model=model or self._config.compression_model,
+            model=model or resolve_compression_model(self._config),
             messages=messages,
             temperature=0,
         )

@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from skillreducer.config import Config, resolve_api_base_url, resolve_api_key
+from skillreducer.config import (
+    Config,
+    resolve_api_base_url,
+    resolve_api_key,
+    resolve_compression_model,
+    resolve_evaluation_model,
+    resolve_routing_model,
+)
 
 if TYPE_CHECKING:
     from agno.models.base import Model
@@ -32,7 +39,7 @@ def create_openai_chat(
         )
 
     kwargs: dict = {
-        "id": model_id or config.compression_model,
+        "id": model_id or resolve_compression_model(config),
         "api_key": api_key,
         "temperature": temperature,
     }
@@ -43,12 +50,12 @@ def create_openai_chat(
 
 
 def create_compression_model(config: Config) -> Model:
-    return create_openai_chat(config, model_id=config.compression_model)
+    return create_openai_chat(config, model_id=resolve_compression_model(config))
 
 
 def create_routing_model(config: Config) -> Model:
-    return create_openai_chat(config, model_id=config.routing_model)
+    return create_openai_chat(config, model_id=resolve_routing_model(config))
 
 
 def create_evaluation_model(config: Config) -> Model:
-    return create_openai_chat(config, model_id=config.evaluation_model)
+    return create_openai_chat(config, model_id=resolve_evaluation_model(config))

@@ -14,32 +14,95 @@ DEFAULT_CONFIG_PATHS = [
 # Env / .env field names (only these).
 _API_KEY_ENV = ("api_key",)
 _API_BASE_URL_ENV = ("api_base_url",)
+_COMPRESSION_MODEL_ENV = ("compression_model", "compression")
+_ROUTING_MODEL_ENV = ("routing_model", "routing_oracle")
+_EVALUATION_MODEL_ENV = ("evaluation_model", "evaluation")
 
 
-def load_dotenv(path: Path | None = None) -> None:
-    """Load KEY=VALUE pairs from a .env file into os.environ (does not override existing)."""
-    candidates = [path] if path else [Path(".env"), Path(__file__).resolve().parents[1] / ".env"]
-    for candidate in candidates:
-        if not candidate or not candidate.is_file():
+_dotenv_loaded = False
+_dotenv_keys: set[str] = set()
+
+
+def _dotenv_search_paths() -> list[Path]:
+    """Return .env paths from least to most specific (later may override earlier)."""
+    seen: set[Path] = set()
+    ordered: list[Path] = []
+
+    def add(directory: Path) -> None:
+        path = (directory / ".env").resolve()
+        if path not in seen:
+            seen.add(path)
+            ordered.append(path)
+
+    add(Path(__file__).resolve().parents[1])
+
+    cwd = Path.cwd()
+    for parent in list(cwd.parents)[::-1]:
+        add(parent)
+    add(cwd)
+
+    return ordered
+
+
+def _apply_dotenv_file(path: Path) -> None:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
             continue
-        for line in candidate.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            key = key.strip()
-            value = value.strip().strip("'").strip('"')
-            if key and key not in os.environ:
-                os.environ[key] = value
-        break
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if not key:
+            continue
+        if key not in os.environ:
+            os.environ[key] = value
+            _dotenv_keys.add(key)
+        elif key in _dotenv_keys:
+            os.environ[key] = value
+
+
+def load_dotenv(path: Path | None = None, *, force: bool = False) -> None:
+    """Load KEY=VALUE pairs from .env into os.environ.
+
+    OS environment variables are never overwritten. Among .env files, later
+    search paths override earlier ones (package root → ancestors → cwd).
+    """
+    global _dotenv_loaded
+
+    if path is not None:
+        if path.is_file():
+            _apply_dotenv_file(path)
+        return
+
+    if _dotenv_loaded and not force:
+        return
+
+    _dotenv_keys.clear()
+    for candidate in _dotenv_search_paths():
+        if candidate.is_file():
+            _apply_dotenv_file(candidate)
+    _dotenv_loaded = True
+
+
+def ensure_dotenv_loaded() -> None:
+    """Load .env once before reading credentials or model ids."""
+    load_dotenv()
+
+
+def _env_value(*names: str) -> str | None:
+    ensure_dotenv_loaded()
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return None
 
 
 def resolve_api_key(config: Config | None = None) -> str | None:
     """Resolve API key: environment variables override config.yaml / Config fields."""
-    for name in _API_KEY_ENV:
-        value = os.environ.get(name)
-        if value:
-            return value
+    value = _env_value(*_API_KEY_ENV)
+    if value:
+        return value
     if config and config.api_key:
         return config.api_key
     return None
@@ -47,16 +110,45 @@ def resolve_api_key(config: Config | None = None) -> str | None:
 
 def resolve_api_base_url(config: Config | None = None) -> str | None:
     """Resolve API base URL: environment overrides config.yaml (base_url / api_base_url)."""
-    for name in _API_BASE_URL_ENV:
-        value = os.environ.get(name)
-        if value:
-            return value
+    value = _env_value(*_API_BASE_URL_ENV)
+    if value:
+        return value
     if config:
         if config.api_base_url:
             return config.api_base_url
         if config.base_url:
             return config.base_url
     return None
+
+
+def resolve_compression_model(config: Config | None = None) -> str:
+    """Resolve compression model id: environment overrides config.yaml."""
+    value = _env_value(*_COMPRESSION_MODEL_ENV)
+    if value:
+        return value
+    if config:
+        return config.compression_model
+    return Config.compression_model
+
+
+def resolve_routing_model(config: Config | None = None) -> str:
+    """Resolve routing oracle model id: environment overrides config.yaml."""
+    value = _env_value(*_ROUTING_MODEL_ENV)
+    if value:
+        return value
+    if config:
+        return config.routing_model
+    return Config.routing_model
+
+
+def resolve_evaluation_model(config: Config | None = None) -> str:
+    """Resolve evaluation model id: environment overrides config.yaml."""
+    value = _env_value(*_EVALUATION_MODEL_ENV)
+    if value:
+        return value
+    if config:
+        return config.evaluation_model
+    return Config.evaluation_model
 
 
 @dataclass
@@ -78,8 +170,8 @@ class Config:
 
     @classmethod
     def load(cls, path: Path | None = None) -> Config:
-        """Load config from yaml (optional), then apply env for api_key / api_base_url."""
-        load_dotenv()
+        """Load config from yaml (optional), then apply env overrides."""
+        ensure_dotenv_loaded()
         candidates = [path] if path else DEFAULT_CONFIG_PATHS
         data: dict = {}
         for candidate in candidates:
@@ -116,20 +208,12 @@ class Config:
                 break
 
         config = cls(**data)
-        # Environment overrides yaml for credentials / endpoint.
-        env_key = None
-        for name in _API_KEY_ENV:
-            if os.environ.get(name):
-                env_key = os.environ[name]
-                break
+        # Environment overrides yaml.
+        env_key = _env_value(*_API_KEY_ENV)
         if env_key:
             config.api_key = env_key
 
-        env_base = None
-        for name in _API_BASE_URL_ENV:
-            if os.environ.get(name):
-                env_base = os.environ[name]
-                break
+        env_base = _env_value(*_API_BASE_URL_ENV)
         if env_base:
             config.api_base_url = env_base
             config.base_url = env_base
@@ -137,5 +221,17 @@ class Config:
             config.base_url = config.api_base_url
         elif config.base_url and not config.api_base_url:
             config.api_base_url = config.base_url
+
+        env_compression = _env_value(*_COMPRESSION_MODEL_ENV)
+        if env_compression:
+            config.compression_model = env_compression
+
+        env_routing = _env_value(*_ROUTING_MODEL_ENV)
+        if env_routing:
+            config.routing_model = env_routing
+
+        env_evaluation = _env_value(*_EVALUATION_MODEL_ENV)
+        if env_evaluation:
+            config.evaluation_model = env_evaluation
 
         return config

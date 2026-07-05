@@ -98,19 +98,27 @@ skillreducer reduce ./my-skill-library --recursive
 
 ## Configuration
 
-### API key and base URL (from env)
+### API key, base URL, and models (from env)
 
-Credentials are read from `.env` (or the environment). Env vars override `config.yaml`.
+Credentials and model ids are read from `.env` (auto-loaded on startup) or the environment. Env vars override `config.yaml`.
 
-| Setting | Name |
-|---------|------|
-| **API key** | `api_key` |
-| **API base URL** | `api_base_url` |
+`.env` is discovered automatically: package root, parent directories of the current working directory, then cwd (later paths win among `.env` files).
+
+| Setting | Env name | YAML key (`models.*`) |
+|---------|----------|------------------------|
+| **API key** | `api_key` | — |
+| **API base URL** | `api_base_url` | `api_base_url` / `base_url` |
+| **Compression model** (Stage 2, general LLM) | `compression_model` | `compression` |
+| **Routing model** (Stage 1 oracle) | `routing_model` | `routing_oracle` |
+| **Evaluation model** (Gate 2, planned) | `evaluation_model` | `evaluation` |
 
 ```bash
 # .env (recommended)
 api_key=sk-...
 api_base_url=https://api.openai.com/v1
+compression_model=gpt-4o-mini
+routing_model=gpt-4o-mini
+evaluation_model=gpt-4o-mini
 ```
 
 Optional YAML (`config.example.yaml` → `config.yaml`):
@@ -118,6 +126,10 @@ Optional YAML (`config.example.yaml` → `config.yaml`):
 ```yaml
 api_key: sk-...
 api_base_url: https://api.openai.com/v1
+models:
+  compression: gpt-4o-mini
+  routing_oracle: gpt-4o-mini
+  evaluation: gpt-4o-mini
 ```
 
 Without an API key, LLM features are disabled and heuristics are used. Use `--no-llm` to force heuristic-only mode.

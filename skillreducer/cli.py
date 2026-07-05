@@ -7,7 +7,7 @@ import click
 from skillreducer import __version__
 from skillreducer.agent import SkillReducerAgent
 from skillreducer.audit import audit_skill
-from skillreducer.config import Config
+from skillreducer.config import Config, ensure_dotenv_loaded
 from skillreducer.parser import find_skill_paths
 from skillreducer.pipeline import reduce_skill
 from skillreducer.report import print_audit_report, print_reduce_report
@@ -17,6 +17,7 @@ from skillreducer.report import print_audit_report, print_reduce_report
 @click.version_option(__version__, prog_name="skillreducer")
 def main() -> None:
     """Implementation of SkillReducer (Gao et al., arXiv:2603.29919) for LLM agent skills."""
+    ensure_dotenv_loaded()
 
 
 @main.command("audit")
