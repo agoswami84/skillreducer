@@ -6,6 +6,7 @@ models:
 thresholds:
   short_description_tokens: 40
   min_reference_tokens: 30
+  min_script_tokens: 20
   max_feedback_iterations: 2
   max_restore_steps: 3
 

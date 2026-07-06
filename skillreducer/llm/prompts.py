@@ -62,3 +62,29 @@ Given reference content, return JSON:
 Content:
 {content}
 """
+
+REVIEW_SCRIPT_EXTRACTION = """\
+Review each Python or Linux shell code block in the markdown file below and decide
+whether it should be extracted into a standalone script file under scripts/.
+
+Return JSON with one item per block:
+{{"items": [
+  {{"index": 0, "extract": true, "reason": "...", "script_name": "foo.py", "replacement": "Run: `python scripts/foo.py`"}},
+  {{"index": 1, "extract": true, "reason": "...", "script_name": "deploy.sh", "replacement": "Run: `bash scripts/deploy.sh`"}}
+]}}
+
+Rules:
+- Python blocks -> .py files; run with python scripts/<name>.py
+- Bash/sh/shell/zsh blocks -> .sh files; run with bash scripts/<name>.sh
+- NOT every block should be extracted — default to extract: false when uncertain
+- extract: true only for complete, runnable, multi-line scripts worth a separate file
+- extract: false for one-liners, syntax illustrations, partial snippets, or code
+  tightly coupled to surrounding prose
+- replacement is required only when extract is true (max ~30 tokens)
+- include reason for every block
+
+File: {filename}
+
+Blocks:
+{blocks}
+"""

@@ -40,7 +40,7 @@ def audit_cmd(path: Path, recursive: bool, config_path: Path | None) -> None:
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
 @click.option("--output", "-o", type=click.Path(path_type=Path), default=Path("optimized"))
 @click.option("--recursive", "-r", is_flag=True, help="Reduce all skills under PATH")
-@click.option("--stage", type=click.Choice(["1", "2"]), default=None, help="Run a single stage")
+@click.option("--stage", type=click.Choice(["1", "2", "3"]), default=None, help="Run a single stage")
 @click.option("--dry-run", is_flag=True, help="Compute report without writing files")
 @click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), default=None)
 @click.option("--no-llm", is_flag=True, help="Use heuristic mode without LLM API calls")
@@ -78,7 +78,7 @@ def reduce_cmd(
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
 @click.option("--output", "-o", type=click.Path(path_type=Path), default=Path("optimized"))
 @click.option("--recursive", "-r", is_flag=True, help="Optimize all skills under PATH")
-@click.option("--stage", type=click.Choice(["1", "2"]), default=None, help="Run a single stage")
+@click.option("--stage", type=click.Choice(["1", "2", "3"]), default=None, help="Run a single stage")
 @click.option("--dry-run", is_flag=True, help="Compute report without writing files")
 @click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), default=None)
 def agent_cmd(

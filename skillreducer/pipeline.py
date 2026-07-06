@@ -18,6 +18,7 @@ from skillreducer.stage2.disclose import (
     restructure_body,
     write_reference_file,
 )
+from skillreducer.stage3.extract import extract_scripts_from_markdown
 from skillreducer.tokenizer import count_tokens
 
 
@@ -40,9 +41,11 @@ def reduce_skill(
     description = skill.description
     body = skill.body
     new_references: dict[str, str] = {}
+    extracted_scripts: dict[str, str] = {}
 
     run_stage1 = stage in (None, 1)
     run_stage2 = stage in (None, 2)
+    run_stage3 = stage in (None, 3)
 
     if run_stage1:
         skill_library = load_skill_library(skill)
@@ -99,6 +102,28 @@ def reduce_skill(
             if name not in new_references:
                 new_references[name] = content
 
+    if run_stage3:
+        md_files: dict[str, str] = {"SKILL.md": body}
+        for name, content in new_references.items():
+            if name.lower().endswith(".md"):
+                md_files[name] = content
+        for ref in skill.references:
+            if ref.path.name not in md_files and ref.path.suffix.lower() == ".md":
+                md_files[ref.path.name] = ref.content
+
+        stage3_result = extract_scripts_from_markdown(
+            md_files,
+            llm_client if llm_client.enabled else None,
+            config,
+        )
+        notes.extend(stage3_result.notes)
+        body = stage3_result.files.get("SKILL.md", body)
+        for name, content in stage3_result.files.items():
+            if name == "SKILL.md":
+                continue
+            new_references[name] = content
+        extracted_scripts = stage3_result.scripts
+
     out_skill_dir = output_dir / skill.skill_dir.name
     files_written: list[str] = []
 
@@ -114,9 +139,22 @@ def reduce_skill(
         files_written.append("SKILL.md")
 
         scripts_src = skill.skill_dir / "scripts"
+        scripts_out = out_skill_dir / "scripts"
         if scripts_src.exists() and scripts_src.is_dir():
-            shutil.copytree(scripts_src, out_skill_dir / "scripts")
+            shutil.copytree(scripts_src, scripts_out)
             files_written.append("scripts/")
+
+        for rel_path, script_content in extracted_scripts.items():
+            script_path = out_skill_dir / rel_path
+            script_path.parent.mkdir(parents=True, exist_ok=True)
+            if script_path.exists():
+                stem = script_path.stem
+                suffix = 2
+                while script_path.exists():
+                    script_path = script_path.with_name(f"{stem}_{suffix}.py")
+                    suffix += 1
+            script_path.write_text(script_content, encoding="utf-8")
+            files_written.append(str(script_path.relative_to(out_skill_dir)).replace("\\", "/"))
 
         for filename, content in new_references.items():
             ref_path = out_skill_dir / filename

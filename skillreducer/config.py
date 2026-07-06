@@ -215,6 +215,7 @@ class Config:
     api_version: str = "2024-10-21"
     short_description_tokens: int = 40
     min_reference_tokens: int = 30
+    min_script_tokens: int = 20
     max_feedback_iterations: int = 2
     max_restore_steps: int = 3
     num_test_queries: int = 8
@@ -250,6 +251,9 @@ class Config:
                     ),
                     "min_reference_tokens": thresholds.get(
                         "min_reference_tokens", cls.min_reference_tokens
+                    ),
+                    "min_script_tokens": thresholds.get(
+                        "min_script_tokens", cls.min_script_tokens
                     ),
                     "max_feedback_iterations": thresholds.get(
                         "max_feedback_iterations", cls.max_feedback_iterations
